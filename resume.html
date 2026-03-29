@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Résumé — Roshan Premil</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Space+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080814;
+      --bg2: #0d0d20;
+      --pink: #ff6ec7;
+      --purple: #9d4edd;
+      --cyan: #00d4ff;
+      --yellow: #ffd700;
+      --card-border: #4a2080;
+      --text: #e8e8ff;
+      --muted: #8888aa;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ─── STARS ─── */
+    .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    .star {
+      position: absolute; border-radius: 50%; background: white; opacity: 0;
+      animation: twinkle var(--d, 3s) var(--delay, 0s) infinite;
+    }
+    @keyframes twinkle { 0%, 100% { opacity: 0; } 50% { opacity: var(--op, 0.6); } }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 48px;
+      background: rgba(8, 8, 20, 0.7);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(157, 78, 221, 0.15);
+    }
+    .nav-logo {
+      font-size: 1.4rem; font-weight: 800;
+      background: linear-gradient(90deg, var(--pink), var(--cyan));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      text-decoration: none;
+    }
+    .nav-links { display: flex; align-items: center; gap: 32px; list-style: none; }
+    .nav-links a {
+      color: var(--text); text-decoration: none; font-size: 0.9rem;
+      font-weight: 500; opacity: 0.8; transition: opacity 0.2s;
+    }
+    .nav-links a:hover, .nav-links a.active { opacity: 1; color: var(--cyan); }
+    .nav-icon { display: flex; align-items: center; gap: 6px; }
+    .nav-icon svg { width: 18px; height: 18px; fill: var(--text); opacity: 0.8; transition: opacity 0.2s; }
+    .nav-icon:hover svg { opacity: 1; }
+
+    /* ─── PAGE ─── */
+    .page {
+      position: relative; z-index: 1;
+      max-width: 900px; margin: 0 auto;
+      padding: 110px 48px 80px;
+    }
+    @media (max-width: 600px) {
+      .page { padding: 90px 24px 60px; }
+      nav { padding: 16px 24px; }
+    }
+
+    /* ─── HEADER ─── */
+    .resume-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 48px; gap: 24px; flex-wrap: wrap;
+    }
+    .resume-name {
+      font-size: clamp(2.2rem, 5vw, 3.6rem);
+      font-weight: 800; line-height: 1.05; letter-spacing: -1px;
+      background: linear-gradient(90deg, var(--pink) 0%, var(--purple) 35%, var(--cyan) 70%, var(--yellow) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      white-space: nowrap;
+    }
+    .resume-sub {
+      font-family: 'Caveat', cursive;
+      font-size: 1.3rem; color: var(--cyan); opacity: 0.9;
+      margin-top: 6px; letter-spacing: 0.5px;
+    }
+    .resume-contacts {
+      display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
+      margin-top: 4px;
+    }
+    .resume-contacts a {
+      display: flex; align-items: center; gap: 7px;
+      color: var(--muted); text-decoration: none;
+      font-size: 0.85rem; transition: color 0.2s;
+    }
+    .resume-contacts a:hover { color: var(--cyan); }
+    .resume-contacts svg { width: 14px; height: 14px; fill: currentColor; flex-shrink: 0; }
+
+    /* ─── DIVIDER ─── */
+    .gradient-line {
+      height: 1px;
+      background: linear-gradient(90deg, var(--pink), var(--purple), var(--cyan));
+      margin-bottom: 40px; opacity: 0.6;
+    }
+
+    /* ─── SECTION ─── */
+    .section { margin-bottom: 44px; }
+    .section-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 2.5px;
+      text-transform: uppercase; color: var(--cyan); margin-bottom: 20px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .section-heading::after {
+      content: ''; flex: 1; height: 1px;
+      background: linear-gradient(90deg, rgba(0,212,255,0.3), transparent);
+    }
+
+    /* ─── ENTRY ─── */
+    .entry { margin-bottom: 24px; }
+    .entry-header {
+      display: flex; justify-content: space-between; align-items: baseline;
+      gap: 12px; flex-wrap: wrap; margin-bottom: 3px;
+    }
+    .entry-title { font-size: 1rem; font-weight: 700; color: var(--text); }
+    .entry-title span { color: var(--purple); font-weight: 500; }
+    .entry-date { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+    .entry-org {
+      font-size: 0.85rem; color: var(--cyan); font-weight: 500;
+      margin-bottom: 7px;
+    }
+    .entry-desc {
+      color: var(--muted); font-size: 0.85rem; line-height: 1.65;
+    }
+    .entry-desc ul { padding-left: 18px; }
+    .entry-desc li { margin-bottom: 3px; }
+    .entry-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .tag {
+      font-size: 0.68rem; font-weight: 600; padding: 2px 9px;
+      border-radius: 999px;
+      background: rgba(157, 78, 221, 0.15);
+      border: 1px solid rgba(157, 78, 221, 0.35);
+      color: var(--purple); letter-spacing: 0.3px;
+    }
+    .tag.cyan {
+      background: rgba(0, 212, 255, 0.1); border-color: rgba(0, 212, 255, 0.3); color: var(--cyan);
+    }
+    .tag.pink {
+      background: rgba(255, 110, 199, 0.1); border-color: rgba(255, 110, 199, 0.3); color: var(--pink);
+    }
+
+    /* ─── SKILLS ─── */
+    .skills-table { display: flex; flex-direction: column; gap: 10px; }
+    .skill-row { display: grid; grid-template-columns: 140px 1fr; gap: 16px; align-items: center; }
+    .skill-label { font-size: 0.8rem; color: var(--muted); font-weight: 500; }
+    .skill-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    /* ─── PRINT ─── */
+    @media print {
+      body { background: white; color: #111; }
+      nav, .stars { display: none; }
+      .page { padding: 24px; }
+      .resume-name { -webkit-text-fill-color: #111; background: none; color: #111; }
+      .section-heading { color: #555; }
+      .section-heading::after { background: #ccc; }
+      .entry-org { color: #555; }
+      .tag { border: 1px solid #ccc; color: #555; background: #f5f5f5; }
+      .gradient-line { background: #ccc; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<!-- ─── NAV ─── -->
+<nav>
+  <a href="index.html" class="nav-logo">::RP~</a>
+  <ul class="nav-links">
+    <li><a href="index.html#projects">projects</a></li>
+    <li><a href="index.html#about">about</a></li>
+    <li><a href="resume.html" class="active">résumé</a></li>
+    <li>
+      <a href="https://github.com/Rosh2403" target="_blank" rel="noopener" class="nav-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+      </a>
+    </li>
+    <li>
+      <a href="https://linkedin.com/in/roshanpremil" target="_blank" rel="noopener" class="nav-icon">
+        <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+      </a>
+    </li>
+    <li>
+      <a href="mailto:rohanroshan2403@gmail.com" class="nav-icon">
+        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+      </a>
+    </li>
+  </ul>
+</nav>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="resume-header">
+    <div>
+      <div class="resume-name">ROSHAN PREMIL</div>
+      <div class="resume-sub">Software × Computer Engineering</div>
+    </div>
+    <div class="resume-contacts">
+      <a href="mailto:rohanroshan2403@gmail.com">
+        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+        rohanroshan2403@gmail.com
+      </a>
+      <a href="https://github.com/Rosh2403" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+        github.com/Rosh2403
+      </a>
+      <a href="https://linkedin.com/in/roshanpremil" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+        linkedin.com/in/roshanpremil
+      </a>
+      <a>
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        Singapore
+      </a>
+    </div>
+  </div>
+
+  <div class="gradient-line"></div>
+
+  <!-- Education -->
+  <div class="section">
+    <div class="section-heading">Education</div>
+    <div class="entry">
+      <div class="entry-header">
+        <div class="entry-title">Bachelor of Engineering — <span>Computer Engineering</span></div>
+        <div class="entry-date">Aug 2024 – Present</div>
+      </div>
+      <div class="entry-org">National University of Singapore (NUS)</div>
+      <div class="entry-desc">Year 2 student. Coursework includes: Digital Systems, Embedded Programming, Data Structures & Algorithms, Object-Oriented Programming, Computer Networks.</div>
+    </div>
+  </div>
+
+  <!-- Projects -->
+  <div class="section">
+    <div class="section-heading">Projects</div>
+
+    <div class="entry">
+      <div class="entry-header">
+        <div class="entry-title">Counsel — AI Legal Research Copilot</div>
+        <div class="entry-date">2026</div>
+      </div>
+      <div class="entry-org">TinyFish Hackathon · github.com/Rosh2403/Counsel</div>
+      <div class="entry-desc">
+        <ul>
+          <li>AI copilot for Singapore law that autonomously searches statutes, MAS regulatory guidance, and case law in parallel</li>
+          <li>Produces structured, citation-backed research briefs with live source traces and confidence-style scoring</li>
+          <li>Designed for lawyers, founders, and compliance teams to turn hours of manual legal searching into minutes</li>
+        </ul>
+      </div>
+      <div class="entry-tags">
+        <span class="tag cyan">TypeScript</span><span class="tag pink">AI Agent</span><span class="tag">RAG</span><span class="tag">Singapore Law</span>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="entry-header">
+        <div class="entry-title">LP Radar — Institutional Investor Intelligence</div>
+        <div class="entry-date">2026</div>
+      </div>
+      <div class="entry-org">TinyFish Accelerator · github.com/Rosh2403/LDRadar</div>
+      <div class="entry-desc">
+        <ul>
+          <li>Built an AI agent that monitors endowments, SWFs, and pension funds and surfaces intelligence the moment it happens using the TinyFish Web Agent API</li>
+          <li>Tracks 11 institutions across 5 intelligence categories; delivers findings via real-time SSE streaming to a live dashboard</li>
+          <li>Selected for TinyFish Accelerator — a 9-week program backed by $2M from Mango Capital</li>
+        </ul>
+      </div>
+      <div class="entry-tags">
+        <span class="tag cyan">TypeScript</span><span class="tag">Next.js 14</span><span class="tag pink">AI Agent</span><span class="tag">Prisma</span><span class="tag">SQLite</span><span class="tag">SSE</span>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="entry-header">
+        <div class="entry-title">GravityGuard — Elderly Fall Detection System</div>
+        <div class="entry-date">2025</div>
+      </div>
+      <div class="entry-org">NUS CG2028 · github.com/Rosh2403/Fall-detector</div>
+      <div class="entry-desc">
+        <ul>
+          <li>Real-time embedded fall detection on STM32L4S5 using accelerometer + gyroscope sensor fusion</li>
+          <li>Implemented circular-buffer smoothing via custom ARM assembly moving average filter (mov_avg.s)</li>
+          <li>3-state FSM (NORMAL → FALL_DETECTED → LONG_LIE) with local LED/buzzer alerts and optional Wi-Fi telemetry</li>
+        </ul>
+      </div>
+      <div class="entry-tags">
+        <span class="tag cyan">C</span><span class="tag pink">ARM Assembly</span><span class="tag">STM32</span><span class="tag">Embedded</span><span class="tag">Wi-Fi</span>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="entry-header">
+        <div class="entry-title">ParkSmart — Singapore Parking Optimizer</div>
+        <div class="entry-date">2026</div>
+      </div>
+      <div class="entry-org">github.com/Rosh2403/ParkSmart</div>
+      <div class="entry-desc">
+        <ul>
+          <li>Real-time carpark availability from HDB, URA, and LTA (updates every minute) with interactive Leaflet map</li>
+          <li>Smart scoring engine ranks carparks across 4 modes: cheapest, closest, balanced, best value — using weighted cost/distance/availability factors</li>
+          <li>Used Gemini AI for structured mall tariff extraction from unstructured rate pages</li>
+        </ul>
+      </div>
+      <div class="entry-tags">
+        <span class="tag cyan">JavaScript</span><span class="tag">Next.js 14</span><span class="tag pink">LTA API</span><span class="tag">Leaflet</span><span class="tag">Gemini</span>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="entry-header">
+        <div class="entry-title">ProjectX — Invoice Reconciliation Platform</div>
+        <div class="entry-date">2025</div>
+      </div>
+      <div class="entry-org">github.com/Rosh2403/ProjectX</div>
+      <div class="entry-desc">
+        <ul>
+          <li>Frontend app for purchase orders, invoicing, and analytics with per-user row-level security via Supabase</li>
+          <li>CSV reporting, real-time data sync, and magic-link authentication</li>
+        </ul>
+      </div>
+      <div class="entry-tags">
+        <span class="tag cyan">TypeScript</span><span class="tag">Vite</span><span class="tag pink">Supabase</span>
+      </div>
+    </div>
+
+
+    <div class="entry">
+      <div class="entry-header">
+        <div class="entry-title">Cactus × DeepMind FunctionGemma Hackathon</div>
+        <div class="entry-date">2026</div>
+      </div>
+      <div class="entry-org">Cactus Compute × DeepMind · github.com/Rosh2403/functiongemma-hackathon</div>
+      <div class="entry-desc">
+        <ul>
+          <li>Built agentic function-calling pipelines on FunctionGemma, DeepMind's open-source function-calling model</li>
+        </ul>
+      </div>
+      <div class="entry-tags">
+        <span class="tag cyan">Python</span><span class="tag pink">Gemma</span><span class="tag">DeepMind</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skills -->
+  <div class="section">
+    <div class="section-heading">Skills</div>
+    <div class="skills-table">
+      <div class="skill-row">
+        <div class="skill-label">Languages</div>
+        <div class="skill-pills">
+          <span class="tag cyan">TypeScript</span><span class="tag cyan">JavaScript</span><span class="tag cyan">Python</span><span class="tag cyan">C</span><span class="tag cyan">C#</span><span class="tag cyan">Java</span><span class="tag cyan">ARM Assembly</span>
+        </div>
+      </div>
+      <div class="skill-row">
+        <div class="skill-label">Frameworks</div>
+        <div class="skill-pills">
+          <span class="tag">Next.js</span><span class="tag">React</span><span class="tag">Vite</span><span class="tag">ASP.NET Core</span>
+        </div>
+      </div>
+      <div class="skill-row">
+        <div class="skill-label">Tools & Infra</div>
+        <div class="skill-pills">
+          <span class="tag pink">Supabase</span><span class="tag pink">Prisma</span><span class="tag pink">SQLite</span><span class="tag pink">Git</span><span class="tag pink">Leaflet</span>
+        </div>
+      </div>
+      <div class="skill-row">
+        <div class="skill-label">Domains</div>
+        <div class="skill-pills">
+          <span class="tag">Embedded Systems</span><span class="tag">AI Agents</span><span class="tag">Full-Stack Web</span><span class="tag">STM32</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+  const starsEl = document.getElementById('stars');
+  for (let i = 0; i < 80; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2 + 0.5;
+    s.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${(Math.random()*4+2).toFixed(1)}s;--delay:${(Math.random()*5).toFixed(1)}s;--op:${(Math.random()*0.4+0.1).toFixed(2)};`;
+    starsEl.appendChild(s);
+  }
+</script>
+
+</body>
+</html>
