@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Space+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="blog.css" />
+  <title>MuseBoard: porting Muse to a round ESP32-S3 display — Roshan Premil</title>
+  <meta name="description" content="Bringing up the Muse gadget firmware on a Waveshare ESP32-S3-Touch-LCD-1.46B, fixing its speaker, and adding spoken replies." />
+</head>
+<body>
+<nav>
+  <a href="../index.html" class="nav-logo">::RP~</a>
+  <ul class="nav-links">
+    <li><a href="../index.html#projects">projects</a></li>
+    <li><a href="index.html" class="active">blog</a></li>
+    <li><a href="../resume.html">résumé</a></li>
+  </ul>
+</nav>
+
+<main>
+  <a href="index.html" class="back">← all posts</a>
+
+  <article>
+    <header>
+      <div class="post-meta">October 2026 · 6 min read</div>
+      <h1>MuseBoard: porting Muse to a round ESP32-S3 display</h1>
+      <p class="lede">
+        Muse gadgets are open-source devices you build yourself: flash an off-the-shelf ESP32 board with the
+        Muse device SDK and it becomes a little voice assistant you can talk to. The SDK supports a long list of
+        boards, but not the one sitting on my desk. So I ported it.
+      </p>
+      <div class="tags">
+        <span class="tag cyan">C</span>
+        <span class="tag pink">ESP32-S3</span>
+        <span class="tag">ESP-IDF</span>
+        <span class="tag">LVGL</span>
+        <span class="tag">I2S audio</span>
+      </div>
+    </header>
+
+    <h2>The board</h2>
+    <p>
+      The target is Waveshare's <strong>ESP32-S3-Touch-LCD-1.46B</strong>: a tiny round display with a lot packed
+      behind it. It's a great fit for an assistant: a round face for the avatar, a mic to listen, and a speaker to answer.
+    </p>
+
+    <div class="spec-grid">
+      <div class="spec"><b>MCU</b><span>ESP32-S3 with PSRAM, 16 MB flash</span></div>
+      <div class="spec"><b>Display</b><span>412 × 412 round SPD2010, QSPI</span></div>
+      <div class="spec"><b>Touch</b><span>SPD2010 over I2C</span></div>
+      <div class="spec"><b>Audio out</b><span>PCM5101 DAC → NS8002 amp</span></div>
+      <div class="spec"><b>Audio in</b><span>Digital I2S microphone</span></div>
+      <div class="spec"><b>Extras</b><span>TCA9554 IO expander, battery ADC, power latch</span></div>
+    </div>
+
+    <figure class="figure">
+      <svg viewBox="0 0 520 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Block diagram: ESP32-S3 connected to the round display over QSPI, touch and IO expander over I2C, DAC and microphone over I2S, and battery over ADC">
+        <defs>
+          <linearGradient id="g" x1="0" x2="1">
+            <stop offset="0" stop-color="#ff6ec7"/><stop offset="1" stop-color="#00d4ff"/>
+          </linearGradient>
+        </defs>
+        <g font-family="Space Grotesk, sans-serif" font-size="13" fill="#e8e8ff" text-anchor="middle">
+          <rect x="190" y="115" width="140" height="70" rx="6" fill="#0d0d20" stroke="url(#g)" stroke-width="2"/>
+          <text x="260" y="146" font-weight="700">ESP32-S3</text>
+          <text x="260" y="166" fill="#8888aa" font-size="11">Muse firmware</text>
+
+          <circle cx="80" cy="70" r="46" fill="#0d0d20" stroke="#9d4edd" stroke-width="2"/>
+          <text x="80" y="67">412 px</text><text x="80" y="83" fill="#8888aa" font-size="11">LCD + touch</text>
+
+          <rect x="390" y="35" width="110" height="50" rx="6" fill="#0d0d20" stroke="#9d4edd" stroke-width="2"/>
+          <text x="445" y="58">TCA9554</text><text x="445" y="74" fill="#8888aa" font-size="11">panel resets</text>
+
+          <rect x="20" y="215" width="120" height="50" rx="6" fill="#0d0d20" stroke="#9d4edd" stroke-width="2"/>
+          <text x="80" y="238">PCM5101</text><text x="80" y="254" fill="#8888aa" font-size="11">→ amp → speaker</text>
+
+          <rect x="200" y="235" width="120" height="50" rx="6" fill="#0d0d20" stroke="#9d4edd" stroke-width="2"/>
+          <text x="260" y="258">I2S mic</text><text x="260" y="274" fill="#8888aa" font-size="11">push-to-talk</text>
+
+          <rect x="390" y="215" width="110" height="50" rx="6" fill="#0d0d20" stroke="#9d4edd" stroke-width="2"/>
+          <text x="445" y="238">Battery</text><text x="445" y="254" fill="#8888aa" font-size="11">ADC divider</text>
+        </g>
+        <g stroke="#00d4ff" stroke-width="1.5" fill="none" opacity="0.8">
+          <path d="M122 88 L190 130"/><path d="M330 130 L390 70"/>
+          <path d="M190 170 L120 215"/><path d="M260 185 L260 235"/><path d="M330 170 L400 215"/>
+        </g>
+        <g font-family="ui-monospace, monospace" font-size="10" fill="#ffd700">
+          <text x="128" y="103">QSPI</text><text x="350" y="92">I2C</text>
+          <text x="128" y="205">I2S</text><text x="266" y="215">I2S</text><text x="370" y="205">ADC</text>
+        </g>
+      </svg>
+      <figcaption>What the board port has to drive.</figcaption>
+    </figure>
+
+    <h2>Adding a board to the SDK</h2>
+    <p>
+      In the Muse ESP32 SDK, each board is one C file that fills in a <code>muse_board_t</code>: init, display,
+      touch, audio, buttons and power. Everything above that (pairing, chat, the avatar UI) is shared. My port is
+      <code>board_waveshare_s3_146b.c</code>, about 550 lines, plus an sdkconfig overlay and a build shortcut:
+    </p>
+<pre><code>tools/muse/board.sh build 146b
+tools/muse/board.sh flash 146b PORT</code></pre>
+    <p>A few things needed care:</p>
+    <ul>
+      <li>
+        <strong>Resets live behind an IO expander.</strong> The panel and touch reset lines aren't on ESP32 GPIOs;
+        they hang off a TCA9554 on I2C. So I2C comes up first, then the board pulses each reset through the expander
+        before touching the display.
+      </li>
+      <li>
+        <strong>The SPD2010 is picky about update windows.</strong> Partial redraws have to start and end on
+        four-column boundaries, so an LVGL hook rounds every dirty area out before flushing it over QSPI.
+      </li>
+      <li>
+        <strong>Touch is polled.</strong> A small task reads the controller every 10 ms while a finger is down and
+        backs off to 30 ms when idle, with a short lift timeout so taps don't stick.
+      </li>
+      <li>
+        <strong>Power is latched.</strong> The board only stays on while GPIO7 is held high, so that's the very
+        first thing <code>init()</code> does. Powering off drops the latch and goes into deep sleep.
+      </li>
+      <li>
+        <strong>Battery reading.</strong> The battery sits behind a 200K/100K divider on an ADC pin. The first
+        version of the scaling math overflowed a 32-bit int, so it now does the multiply in 64 bits.
+      </li>
+    </ul>
+
+    <h2>The speaker that wouldn't speak</h2>
+    <p>
+      The first build compiled cleanly, the screen and touch worked, but the speaker didn't play properly.
+      The audio path is ESP32 → I2S → PCM5101 DAC → NS8002 amp.
+    </p>
+    <p>
+      The catch is that this PCM5101 has its system clock pin grounded, so it has to derive its internal clock from
+      the I2S bit clock. I was sending 16-bit samples in 16-bit slots, which gives a bit clock of 32× the sample rate.
+      Waveshare's own example, and most ESP32 + PCM5101 boards, run 32-bit slots for a 64× bit clock. Two lines fixed it:
+    </p>
+<pre><code>spk_cfg.slot_cfg.slot_bit_width = I2S_SLOT_BIT_WIDTH_32BIT;
+spk_cfg.slot_cfg.ws_width = 32;</code></pre>
+    <p>
+      To check the amp without needing the whole chat flow, I temporarily added a short boot greeting clip that played on
+      startup. Once the speaker was confirmed working, I removed it before sending the change upstream.
+    </p>
+
+    <h2>Making Muse talk back</h2>
+    <p>
+      Out of the box, gadget replies were text only: you hold the button, speak, Muse transcribes and answers, and the
+      board shows the answer as captions. The SDK left a spot in <code>start_tts</code> for bringing your own
+      text-to-speech.
+    </p>
+    <p>I wired it to Muse's own MP3 stream instead:</p>
+    <ol>
+      <li>When a reply message finishes, it's queued for speech (even if it has no text, as long as it has an id).</li>
+      <li>The board opens <code>GET /api/voice/tts-stream?message_id=…</code> and feeds the MP3 into the
+        on-device decoder as it arrives.</li>
+      <li>Captions follow the audio instead of a fixed reading pace.</li>
+      <li>If the stream can't be opened, or the speaker is turned off in settings, it falls back to text at reading pace.</li>
+    </ol>
+    <div class="callout">
+      <p>Now the board actually holds a conversation: press, talk, and the round screen animates while Muse answers out loud.</p>
+    </div>
+
+    <h2>What I took away</h2>
+    <ul>
+      <li><strong>Read the vendor example first.</strong> The I2S slot width was in Waveshare's sample code the whole time.</li>
+      <li><strong>Get a tiny test signal working before the full system.</strong> A boot sound isolated the audio
+        path from networking, pairing and the chat stack.</li>
+      <li><strong>Keep the upstream diff clean.</strong> Personal test hacks are useful, but they come out before the PR.</li>
+    </ul>
+    <p>
+      The port is still marked experimental, and there's more to check on the hardware: battery and power behavior
+      in particular. If you have one of these boards, give it a try.
+    </p>
+
+    <p style="margin-top:32px;">
+      <a href="https://github.com/Rosh2403/muse-gadget-sdk" target="_blank" rel="noopener" class="repo-btn">View the code on GitHub →</a>
+    </p>
+  </article>
+</main>
+
+<footer>
+  <p>© 2026 Roshan Premil · Built with ♥ in Singapore</p>
+</footer>
+</body>
+</html>
