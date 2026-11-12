@@ -878,6 +878,40 @@ dialog::backdrop {
   color: var(--gold);
 }
 
+/* Library (blog) panel */
+a.log-item {
+  text-decoration: none;
+  color: var(--cream);
+}
+
+.post-item {
+  align-items: start;
+}
+
+.post-item .log-desc {
+  line-height: 1.15;
+  margin-top: 8px;
+}
+
+.post-badge {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 4px 6px;
+  font-family: var(--pixel);
+  font-size: 8px;
+  color: #000;
+  background: var(--gold);
+}
+
+@media (max-width: 600px) {
+  .post-item {
+    grid-template-columns: 28px 1fr;
+  }
+  .post-item .log-status {
+    grid-column: 2;
+  }
+}
+
 .log-foot {
   display: flex;
   justify-content: space-between;

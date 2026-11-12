@@ -84,6 +84,17 @@
     },
   ];
 
+  const POSTS = [
+    {
+      title: "MuseBoard: porting Muse to a round ESP32-S3 display",
+      url: "blog/museboard-esp32.html",
+      date: "OCT 2026",
+      badge: "★ MERGED UPSTREAM",
+      summary:
+        "How I ported Meta's Muse voice assistant firmware to a tiny round Waveshare ESP32-S3 board, tracked a broken speaker down to one I2S setting, and made it talk back. The board support is now merged into Meta's repo.",
+    },
+  ];
+
   const SKILLS = [
     "C++",
     "C",
@@ -183,6 +194,15 @@
       y: 1000,
       w: 230,
       h: 170,
+    },
+    {
+      id: "library",
+      kind: "library",
+      label: "LIBRARY · BLOG",
+      x: 904,
+      y: 1004,
+      w: 180,
+      h: 150,
     },
   ];
   PLACES.forEach((p) => {
@@ -464,6 +484,54 @@
       r(c, cx - 2, y - 26, 4, 28, "#22070c");
     },
 
+    library(c, { x, y, w, h }) {
+      const cx = x + w / 2;
+      const by = y + h;
+      // stepped pediment
+      for (let i = 0; i < 9; i++) {
+        const ww = 36 + ((w + 16 - 36) * i) / 8;
+        r(c, cx - ww / 2, y + i * 4, ww, 4, i % 2 ? C.red2 : C.red3);
+      }
+      // open-book emblem
+      r(c, cx - 13, y + 10, 12, 14, C.cream);
+      r(c, cx + 1, y + 10, 12, 14, C.cream2);
+      r(c, cx - 1, y + 9, 2, 16, C.gold);
+      [13, 17, 21].forEach((ly) => {
+        r(c, cx - 10, y + ly, 7, 1, C.red3);
+        r(c, cx + 3, y + ly, 7, 1, C.red3);
+      });
+      // entablature and walls
+      r(c, x - 8, y + 36, w + 16, 8, C.cream2);
+      r(c, x - 4, y + 44, w + 8, 4, C.red3);
+      r(c, x, y + 48, w, h - 60, C.cream);
+      r(c, x + w - 10, y + 48, 10, h - 60, C.cream2);
+      // columns
+      [x + 8, x + 44, x + w - 56, x + w - 20].forEach((colx) => {
+        r(c, colx, y + 50, 12, h - 64, "#f7e8e0");
+        r(c, colx + 9, y + 50, 3, h - 64, C.cream2);
+        r(c, colx - 2, y + 48, 16, 4, C.cream2);
+        r(c, colx - 2, by - 16, 16, 4, C.cream2);
+      });
+      // bookshelf windows
+      const books = ["#e02a3c", "#ffbf5e", "#4f8a5b", "#f1ddd2", "#7a1020", "#ff8a9a"];
+      [x + 22, x + w - 42].forEach((wx, k) => {
+        r(c, wx - 3, y + 60, 26, 46, C.dark);
+        r(c, wx, y + 63, 20, 40, C.lit);
+        for (let shelf = 0; shelf < 3; shelf++) {
+          const sy = y + 66 + shelf * 13;
+          for (let b = 0; b < 5; b++)
+            r(c, wx + 1 + b * 4, sy, 3, 9, books[(b + shelf + k) % books.length]);
+          r(c, wx, sy + 9, 20, 2, C.dark);
+        }
+      });
+      // sign
+      r(c, cx - 26, y + 54, 52, 14, C.dark);
+      r(c, cx - 24, y + 56, 48, 10, C.red);
+      [0, 1, 2, 3].forEach((i) => r(c, cx - 15 + i * 9, y + 59, 5, 4, C.cream));
+      door(c, cx, by - 12, 30, 46, "#5a1018");
+      r(c, x - 8, by - 12, w + 16, 6, "#d8bfb4");
+      r(c, x - 14, by - 6, w + 28, 6, "#b89c92");
+    },
     hall(c, { x, y, w, h }) {
       const cx = x + w / 2;
       const by = y + h;
@@ -875,6 +943,10 @@
     bench(630, 596);
     bench(930, 596);
 
+    // path from the south street round to the library door
+    r(S, 866, ROAD_B + 70, 24, 238, C.walk);
+    r(S, 866, 1180, 150, 24, C.walk);
+
     // path from the south street round to the AgentKey vault door
     r(S, 1360, ROAD_B + 70, 26, 230, C.walk);
     r(S, 1230, 1186, 156, 22, C.walk);
@@ -930,9 +1002,6 @@
       [40, 1080],
       [560, 1078],
       [690, 1040],
-      [920, 1050],
-      [1000, 1086],
-      [1080, 1036],
       [1500, 1036],
     ].forEach(([x, y], i) => addTree(x, y, i % 3, i % 4 === 0 ? 1.15 : 1));
     for (let x = 20; x < W; x += 46) {
@@ -942,8 +1011,6 @@
     [
       [560, 1150],
       [660, 1180],
-      [940, 1160],
-      [1030, 1130],
       [1530, 1130],
       [240, 1160],
       [420, 1180],
@@ -1533,6 +1600,52 @@
     );
   }
 
+  function openBlog() {
+    showPanel(
+      "LIBRARY · THE BLOG",
+      h("h2", { id: "panel-title" }, "Notes from the workbench."),
+      h(
+        "p",
+        { class: "panel-sub" },
+        "Write-ups of things I’ve built, bugs and all",
+      ),
+      h(
+        "ul",
+        { class: "log-list" },
+        POSTS.map((post) =>
+          h(
+            "li",
+            {},
+            h(
+              "a",
+              { class: "log-item found post-item", href: post.url },
+              h("span", { class: "log-icon", "aria-hidden": "true" }, "▤"),
+              h(
+                "span",
+                {},
+                h("span", { class: "log-name" }, post.title),
+                h("span", { class: "log-desc" }, post.summary),
+                post.badge && h("span", { class: "post-badge" }, post.badge),
+              ),
+              h("span", { class: "log-status" }, `${post.date} ▶`),
+            ),
+          ),
+        ),
+      ),
+      h(
+        "div",
+        { class: "panel-actions" },
+        h(
+          "a",
+          { class: "btn btn-primary", href: POSTS[0].url },
+          "READ LATEST POST",
+        ),
+        h("a", { class: "btn", href: "blog/" }, "ALL POSTS"),
+        closeButton(),
+      ),
+    );
+  }
+
   function openPortal() {
     sfx.portal();
     showPanel(
@@ -1604,6 +1717,7 @@
         "RÉSUMÉ HALL",
         "The full résumé",
       ],
+      [PLACES.find((s) => s.id === "library"), "▤", "LIBRARY", "The blog"],
       [PORTAL, "◎", "GITHUB PORTAL", "Everything else"],
     ].map(([spot, icon, name, desc]) =>
       item(spot, icon, name, desc, "TRAVEL ▶", false),
@@ -1658,6 +1772,7 @@
     else if (spot.id === "home") openAbout();
     else if (spot.id === "post") openContact();
     else if (spot.id === "records") openResume();
+    else if (spot.id === "library") openBlog();
     else if (spot.id === "github") openPortal();
   }
 
