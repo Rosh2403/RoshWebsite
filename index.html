@@ -1,829 +1,158 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Roshan Premil — Software Engineer</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Space+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#120306" />
+    <meta
+      name="description"
+      content="Roshan Premil’s playable portfolio. Walk around Rosh City, a pixel-art world where every building is a project: AI agents, full-stack apps, knowledge graphs, and embedded systems."
+    />
+    <title>Roshan Premil — Rosh City, a playable portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <script src="game.js" defer></script>
+  </head>
+  <body>
+    <!-- Plain version of the site for screen readers and search engines -->
+    <div class="sr-only">
+      <h2>About Roshan</h2>
+      <p>
+        Computer Engineering student at the National University of Singapore,
+        currently in Silicon Valley with NUS Overseas Colleges as a compiler
+        engineering intern at TetraMem. Singapore National Cricket Team carded
+        athlete. Builds AI agents, identity systems, knowledge graphs, and
+        embedded systems.
+      </p>
+      <h2>Projects</h2>
+      <ul>
+        <li><a href="https://github.com/Rosh2403/AgentKey">AgentKey</a>: portable, cryptographically verifiable identity for AI agents.</li>
+        <li><a href="https://github.com/Rosh2403/Counsel">Counsel</a>: AI legal research copilot for Singapore law.</li>
+        <li><a href="https://github.com/Rosh2403/LDRadar">LP Radar</a>: AI agent that monitors institutional investors.</li>
+        <li><a href="https://github.com/Rosh2403/Fall-detector">GravityGuard</a>: real-time fall detection on the STM32.</li>
+        <li><a href="https://github.com/Rosh2403/ParkSmart">ParkSmart</a>: Singapore carpark finder.</li>
+        <li><a href="https://github.com/Rosh2403/memspace-falkordb-blog">Memspace</a>: shared memory for AI assistants on FalkorDB.</li>
+        <li><a href="https://github.com/Rosh2403/functiongemma-hackathon">FunctionGemma</a>: Cactus × DeepMind hackathon project.</li>
+      </ul>
+      <p>
+        <a href="resume.html">Résumé</a> ·
+        <a href="mailto:rohanroshan2403@gmail.com">Email</a> ·
+        <a href="https://linkedin.com/in/roshan-premil">LinkedIn</a>
+      </p>
+    </div>
 
-    :root {
-      --bg: #080814;
-      --bg2: #0d0d20;
-      --pink: #ff6ec7;
-      --purple: #9d4edd;
-      --cyan: #00d4ff;
-      --yellow: #ffd700;
-      --card-border: #4a2080;
-      --text: #e8e8ff;
-      --muted: #8888aa;
-    }
+    <main id="game" class="game" tabindex="-1">
+      <canvas
+        id="world"
+        role="img"
+        aria-label="Rosh City: a pixel-art city at night where each building is one of Roshan’s projects. Use the quest log to open any project."
+      ></canvas>
+      <div class="screen-fx" aria-hidden="true"></div>
 
-    html { scroll-behavior: smooth; }
+      <header class="hud" id="hud" hidden>
+        <div class="hud-card">
+          <canvas class="portrait" width="16" height="16" aria-hidden="true"></canvas>
+          <div class="hud-info">
+            <p class="hud-name">ROSHAN <span id="hud-level">LV 1</span></p>
+            <p class="hud-class">NUS · COMPUTER ENGINEERING</p>
+            <div class="xp" aria-label="Experience">
+              <span>XP</span>
+              <div class="xp-bar"><i id="xp-fill"></i></div>
+              <span id="xp-text">0/700</span>
+            </div>
+          </div>
+        </div>
+        <div class="hud-side">
+          <div class="hud-buttons">
+            <button id="quest-btn" class="hud-btn" aria-label="Open quest log">
+              <span class="star">★</span> <span id="found-count">0/7</span>
+              <span class="hud-btn-label">QUESTS</span> <kbd>Q</kbd>
+            </button>
+            <button id="sound-btn" class="hud-btn" aria-pressed="true" aria-label="Sound">
+              <span id="sound-icon">♪ ON</span>
+            </button>
+          </div>
+          <canvas id="minimap" width="160" height="126" aria-hidden="true"></canvas>
+        </div>
+      </header>
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Space Grotesk', sans-serif;
-      overflow-x: hidden;
-    }
+      <div id="prompt" class="prompt" hidden></div>
+      <p id="live" class="sr-only" aria-live="polite"></p>
 
-    /* ─── STARS ─── */
-    .stars {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-      overflow: hidden;
-    }
-    .star {
-      position: absolute;
-      border-radius: 50%;
-      background: white;
-      opacity: 0;
-      animation: twinkle var(--d, 3s) var(--delay, 0s) infinite;
-    }
-    @keyframes twinkle {
-      0%, 100% { opacity: 0; }
-      50% { opacity: var(--op, 0.6); }
-    }
-
-    /* ─── NAV ─── */
-    nav {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 18px 48px;
-      background: rgba(8, 8, 20, 0.7);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(157, 78, 221, 0.15);
-    }
-    .nav-logo {
-      font-size: 1.4rem;
-      font-weight: 800;
-      background: linear-gradient(90deg, var(--pink), var(--cyan));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      letter-spacing: -0.5px;
-    }
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 32px;
-      list-style: none;
-    }
-    .nav-links a {
-      color: var(--text);
-      text-decoration: none;
-      font-size: 0.9rem;
-      font-weight: 500;
-      opacity: 0.8;
-      transition: opacity 0.2s;
-    }
-    .nav-links a:hover { opacity: 1; }
-    .nav-icon {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .nav-icon svg { width: 18px; height: 18px; fill: var(--text); opacity: 0.8; transition: opacity 0.2s; }
-    .nav-icon:hover svg { opacity: 1; }
-
-    /* ─── WAVE UNDERLINE ─── */
-    .nav-wave {
-      position: absolute;
-      bottom: -3px;
-      right: 200px;
-      width: 120px;
-      height: 8px;
-      opacity: 0.5;
-    }
-
-    /* ─── HERO ─── */
-    #hero {
-      position: relative;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 80px 24px 60px;
-      overflow: hidden;
-    }
-
-    /* Floating shapes */
-    .shape {
-      position: absolute;
-      pointer-events: none;
-      animation: float var(--fd, 6s) ease-in-out var(--fdelay, 0s) infinite alternate;
-    }
-    @keyframes float {
-      from { transform: translateY(0) rotate(var(--r0, 0deg)); }
-      to   { transform: translateY(-20px) rotate(var(--r1, 15deg)); }
-    }
-    .shape-triangle {
-      width: 0; height: 0;
-      border-left: 24px solid transparent;
-      border-right: 24px solid transparent;
-      border-bottom: 40px solid;
-    }
-    .shape-square {
-      width: 32px; height: 32px;
-      border: 3px solid;
-      transform: rotate(20deg);
-    }
-    .shape-circle {
-      width: 28px; height: 28px;
-      border-radius: 50%;
-      border: 2px solid;
-    }
-    .shape-squiggle { opacity: 0.6; }
-
-    /* Browser window frame */
-    .hero-window {
-      position: relative;
-      z-index: 2;
-      border: 2px solid;
-      border-image: linear-gradient(135deg, var(--pink), var(--cyan), var(--yellow)) 1;
-      padding: 0;
-      max-width: 700px;
-      width: 100%;
-      background: rgba(13, 13, 32, 0.6);
-      backdrop-filter: blur(4px);
-    }
-    .window-titlebar {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      padding: 10px 16px;
-      border-bottom: 1px solid rgba(157, 78, 221, 0.3);
-      background: rgba(30, 10, 60, 0.4);
-    }
-    .dot { width: 12px; height: 12px; border-radius: 50%; }
-    .dot-r { background: #ff5f56; }
-    .dot-y { background: #febc2e; }
-    .dot-g { background: #28c840; }
-    .window-body {
-      padding: 40px 56px 44px;
-      text-align: center;
-    }
-    .hero-name {
-      font-size: clamp(2rem, 5.5vw, 4.8rem);
-      white-space: nowrap;
-      font-weight: 800;
-      line-height: 1.05;
-      letter-spacing: -1px;
-      background: linear-gradient(90deg, var(--pink) 0%, var(--purple) 30%, var(--cyan) 65%, var(--yellow) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .hero-sub {
-      margin-top: 16px;
-      font-family: 'Caveat', cursive;
-      font-size: clamp(1.3rem, 3vw, 1.9rem);
-      color: var(--cyan);
-      opacity: 0.9;
-      letter-spacing: 1px;
-    }
-    .hero-sub span { color: var(--pink); }
-
-    .scroll-arrow {
-      position: absolute;
-      bottom: 40px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 2;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-    }
-    .arrow-line {
-      width: 2px;
-      height: 60px;
-      background: linear-gradient(to bottom, var(--purple), transparent);
-      animation: pulse-line 1.5s ease-in-out infinite;
-    }
-    @keyframes pulse-line {
-      0%, 100% { opacity: 0.3; }
-      50% { opacity: 1; }
-    }
-    .arrow-head {
-      width: 0; height: 0;
-      border-left: 10px solid transparent;
-      border-right: 10px solid transparent;
-      border-top: 14px solid var(--purple);
-      animation: pulse-line 1.5s ease-in-out infinite;
-    }
-
-    /* ─── SECTION DIVIDER ─── */
-    .wave-divider {
-      position: relative;
-      height: 80px;
-      overflow: hidden;
-      background: var(--bg);
-    }
-    .wave-divider svg { position: absolute; bottom: 0; width: 100%; }
-
-    /* ─── SECTIONS ─── */
-    section {
-      position: relative;
-      z-index: 1;
-      padding: 80px 48px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    .section-title {
-      font-size: clamp(2rem, 4vw, 2.8rem);
-      font-weight: 800;
-      text-align: center;
-      margin-bottom: 56px;
-      background: linear-gradient(90deg, var(--cyan), var(--purple));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    /* ─── PROJECTS GRID ─── */
-    .projects-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 28px;
-    }
-    @media (max-width: 900px) {
-      .projects-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 600px) {
-      .projects-grid { grid-template-columns: 1fr; }
-      section { padding: 60px 24px; }
-      nav { padding: 16px 24px; }
-    }
-
-    /* Project card */
-    .card {
-      border: 2px solid var(--card-border);
-      background: var(--bg2);
-      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
-      cursor: pointer;
-      text-decoration: none;
-      color: inherit;
-      display: block;
-    }
-    .card:hover {
-      transform: translateY(-6px);
-      border-color: var(--purple);
-      box-shadow: 0 0 24px rgba(157, 78, 221, 0.35);
-    }
-    .card-titlebar {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 9px 14px;
-      background: rgba(157, 78, 221, 0.12);
-      border-bottom: 1px solid var(--card-border);
-    }
-    .card-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--card-border); }
-    .card-thumb {
-      width: 100%;
-      aspect-ratio: 16/9;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: hidden;
-    }
-    .card-thumb img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: top;
-      display: block;
-      transition: transform 0.4s ease;
-    }
-    .card:hover .card-thumb img {
-      transform: scale(1.04);
-    }
-    .card-thumb::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: inherit;
-      filter: brightness(0.85);
-    }
-    .card-thumb.has-img::after { display: none; }
-    .card-thumb-icon {
-      position: relative;
-      z-index: 1;
-      font-size: 3.2rem;
-      filter: drop-shadow(0 0 12px rgba(0,0,0,0.6));
-    }
-    .card-body { padding: 16px 18px 20px; }
-    .card-title {
-      font-size: 1rem;
-      font-weight: 700;
-      color: white;
-      margin-bottom: 6px;
-    }
-    .card-desc {
-      font-size: 0.82rem;
-      color: var(--muted);
-      line-height: 1.5;
-      margin-bottom: 12px;
-    }
-    .card-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-    .tag {
-      font-size: 0.7rem;
-      font-weight: 600;
-      padding: 2px 9px;
-      border-radius: 999px;
-      background: rgba(157, 78, 221, 0.18);
-      border: 1px solid rgba(157, 78, 221, 0.4);
-      color: var(--purple);
-      letter-spacing: 0.3px;
-    }
-    .tag.cyan {
-      background: rgba(0, 212, 255, 0.12);
-      border-color: rgba(0, 212, 255, 0.35);
-      color: var(--cyan);
-    }
-    .tag.pink {
-      background: rgba(255, 110, 199, 0.12);
-      border-color: rgba(255, 110, 199, 0.35);
-      color: var(--pink);
-    }
-
-    /* ─── ABOUT ─── */
-    #about-section {
-      background: var(--bg2);
-      border-top: 1px solid rgba(157, 78, 221, 0.15);
-      border-bottom: 1px solid rgba(157, 78, 221, 0.15);
-    }
-    .about-inner {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 80px 48px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 64px;
-      align-items: center;
-    }
-    @media (max-width: 768px) {
-      .about-inner { grid-template-columns: 1fr; gap: 40px; padding: 60px 24px; }
-    }
-    .about-heading {
-      font-size: clamp(2rem, 4vw, 2.8rem);
-      font-weight: 800;
-      background: linear-gradient(90deg, var(--cyan), var(--purple));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 24px;
-    }
-    .about-text {
-      color: var(--muted);
-      line-height: 1.8;
-      font-size: 0.95rem;
-      margin-bottom: 16px;
-    }
-    .about-text strong { color: var(--text); }
-    .skills-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 8px;
-    }
-    .skill-pill {
-      padding: 10px 16px;
-      background: rgba(157, 78, 221, 0.1);
-      border: 1px solid rgba(157, 78, 221, 0.3);
-      border-radius: 8px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .skill-pill .dot-skill {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: var(--cyan);
-      flex-shrink: 0;
-    }
-
-    /* ─── CONTACT ─── */
-    #contact-section {
-      text-align: center;
-      padding: 80px 48px 60px;
-      max-width: 700px;
-      margin: 0 auto;
-    }
-    .contact-title {
-      font-size: clamp(2rem, 4vw, 2.8rem);
-      font-weight: 800;
-      background: linear-gradient(90deg, var(--pink), var(--cyan));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 16px;
-    }
-    .contact-sub {
-      color: var(--muted);
-      margin-bottom: 36px;
-      line-height: 1.7;
-      font-size: 0.95rem;
-    }
-    .contact-links {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-    .contact-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 9px;
-      padding: 12px 28px;
-      border: 2px solid var(--purple);
-      color: var(--text);
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 0.9rem;
-      font-family: 'Space Grotesk', sans-serif;
-      background: transparent;
-      transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
-    }
-    .contact-btn:hover {
-      background: rgba(157, 78, 221, 0.2);
-      box-shadow: 0 0 20px rgba(157, 78, 221, 0.4);
-    }
-    .contact-btn.primary {
-      border-color: var(--cyan);
-      background: rgba(0, 212, 255, 0.08);
-    }
-    .contact-btn.primary:hover {
-      background: rgba(0, 212, 255, 0.2);
-      box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
-    }
-    .contact-btn svg { width: 18px; height: 18px; fill: currentColor; }
-
-    /* ─── FOOTER ─── */
-    footer {
-      text-align: center;
-      padding: 24px;
-      border-top: 1px solid rgba(157, 78, 221, 0.15);
-      color: var(--muted);
-      font-size: 0.8rem;
-    }
-
-    /* ─── SECTION BG DECORATIONS ─── */
-    .bg-glow {
-      position: absolute;
-      border-radius: 50%;
-      pointer-events: none;
-      filter: blur(80px);
-      opacity: 0.08;
-      z-index: 0;
-    }
-  </style>
-</head>
-<body>
-
-<!-- Stars background -->
-<div class="stars" id="stars"></div>
-
-<!-- ─── NAV ─── -->
-<nav>
-  <div class="nav-logo">::RP~</div>
-  <ul class="nav-links">
-    <li><a href="#projects">projects</a></li>
-    <li><a href="#about">about</a></li>
-    <li><a href="resume.html">résumé</a></li>
-    <li>
-      <a href="https://github.com/Rosh2403" target="_blank" rel="noopener" class="nav-icon">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
-      </a>
-    </li>
-    <li>
-      <a href="https://linkedin.com/in/roshanpremil" target="_blank" rel="noopener" class="nav-icon">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-      </a>
-    </li>
-    <li>
-      <a href="mailto:rohanroshan2403@gmail.com" class="nav-icon">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-      </a>
-    </li>
-  </ul>
-</nav>
-
-<!-- ─── HERO ─── -->
-<section id="hero" style="max-width: none; padding: 0;">
-  <!-- Background glow -->
-  <div class="bg-glow" style="width:600px;height:600px;background:var(--purple);top:-100px;left:-200px;"></div>
-  <div class="bg-glow" style="width:500px;height:500px;background:var(--cyan);top:100px;right:-150px;opacity:0.05;"></div>
-
-  <!-- Floating shapes -->
-  <div class="shape shape-triangle" style="border-bottom-color: var(--purple); top: 15%; left: 6%; opacity:0.6; --fd:7s; --r0:-10deg; --r1:20deg;"></div>
-  <div class="shape shape-square" style="border-color: var(--pink); top: 20%; right: 8%; opacity:0.5; --fd:5s; --fdelay:1s;"></div>
-  <div class="shape shape-triangle" style="border-bottom-color: var(--pink); bottom: 25%; right: 14%; opacity:0.5; --fd:8s; --fdelay:0.5s; --r0:5deg; --r1:-15deg;"></div>
-  <div class="shape shape-square" style="border-color: var(--cyan); bottom: 30%; left: 10%; opacity:0.4; --fd:6s; --fdelay:2s;"></div>
-  <div class="shape shape-circle" style="border-color: var(--cyan); top: 40%; left: 18%; opacity:0.4; --fd:9s; --fdelay:1.5s;"></div>
-  <div class="shape shape-circle" style="border-color: var(--yellow); top: 25%; right: 22%; opacity:0.35; --fd:7s; --fdelay:3s; width:18px;height:18px;"></div>
-  <div class="shape" style="top:60%;right:6%;opacity:0.5;--fd:5s;--fdelay:0.8s;">
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M4 16 Q10 4 16 16 Q22 28 28 16" stroke="#ff6ec7" stroke-width="2.5" fill="none"/></svg>
-  </div>
-  <div class="shape" style="bottom:20%;left:4%;opacity:0.4;--fd:6s;--fdelay:2.5s;">
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M2 14 Q7 2 14 14 Q21 26 26 14" stroke="#9d4edd" stroke-width="2" fill="none"/></svg>
-  </div>
-  <div class="shape" style="top:12%;left:40%;opacity:0.3;--fd:10s;">
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="#00d4ff" stroke-width="1.5" stroke-dasharray="3 3"/></svg>
-  </div>
-
-  <!-- Dots scatter -->
-  <div style="position:absolute;top:18%;left:32%;width:4px;height:4px;background:var(--pink);border-radius:50%;opacity:0.5;"></div>
-  <div style="position:absolute;top:45%;left:5%;width:3px;height:3px;background:var(--cyan);border-radius:50%;opacity:0.6;"></div>
-  <div style="position:absolute;top:70%;right:30%;width:4px;height:4px;background:var(--purple);border-radius:50%;opacity:0.5;"></div>
-  <div style="position:absolute;top:30%;right:4%;width:3px;height:3px;background:var(--yellow);border-radius:50%;opacity:0.5;"></div>
-  <div style="position:absolute;top:80%;left:25%;width:5px;height:5px;background:var(--pink);border-radius:50%;opacity:0.3;"></div>
-
-  <!-- Hero content -->
-  <div style="position:relative;z-index:2;width:100%;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:100px 24px 80px;">
-    <div class="hero-window">
-      <div class="window-titlebar">
-        <div class="dot dot-r"></div>
-        <div class="dot dot-y"></div>
-        <div class="dot dot-g"></div>
+      <div id="talk" class="talk" hidden>
+        <canvas class="portrait talk-portrait" width="16" height="16" aria-hidden="true"></canvas>
+        <div class="talk-body">
+          <p class="talk-name">ROSHAN</p>
+          <p id="talk-text" aria-live="polite"></p>
+          <span class="talk-next" aria-hidden="true">▼</span>
+        </div>
       </div>
-      <div class="window-body">
-        <h1 class="hero-name">ROSHAN PREMIL</h1>
-        <p class="hero-sub">Software <span>×</span> Computer Engineering</p>
+
+      <p id="hint" class="controls-hint" hidden>
+        <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> MOVE
+        <kbd>E</kbd> ENTER <kbd>Q</kbd> QUESTS <kbd>M</kbd> SOUND · OR CLICK
+        ANYWHERE TO WALK
+      </p>
+
+      <div id="touch" class="touch" hidden>
+        <div class="dpad">
+          <button data-dir="up" aria-label="Walk up">▲</button>
+          <button data-dir="left" aria-label="Walk left">◀</button>
+          <button data-dir="right" aria-label="Walk right">▶</button>
+          <button data-dir="down" aria-label="Walk down">▼</button>
+        </div>
+        <button id="a-btn" class="a-btn" aria-label="Enter building">A</button>
       </div>
-    </div>
-    <div class="scroll-arrow">
-      <div class="arrow-line"></div>
-      <div class="arrow-head"></div>
-    </div>
-  </div>
-</section>
 
-<!-- ─── WAVE DIVIDER ─── -->
-<div style="height:70px;overflow:hidden;background:var(--bg);position:relative;">
-  <svg viewBox="0 0 1440 70" preserveAspectRatio="none" style="position:absolute;bottom:0;width:100%;height:100%;">
-    <path d="M0,35 C240,70 480,0 720,35 C960,70 1200,0 1440,35 L1440,70 L0,70 Z" fill="#0d0d20"/>
-    <path d="M0,35 C240,70 480,0 720,35 C960,70 1200,0 1440,35" fill="none" stroke="url(#waveGrad)" stroke-width="2"/>
-    <defs>
-      <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stop-color="#ff6ec7"/>
-        <stop offset="50%" stop-color="#9d4edd"/>
-        <stop offset="100%" stop-color="#00d4ff"/>
-      </linearGradient>
-    </defs>
-  </svg>
-</div>
+      <div id="toasts" class="toasts" aria-live="polite"></div>
 
-<!-- ─── PROJECTS ─── -->
-<div id="projects" style="background:var(--bg2); position:relative; overflow:hidden;">
-  <div class="bg-glow" style="width:400px;height:400px;background:var(--purple);bottom:-100px;right:-100px;"></div>
-  <section>
-    <h2 class="section-title">Projects</h2>
-    <div class="projects-grid">
-
-      <!-- Counsel -->
-      <a href="https://github.com/Rosh2403/Counsel" target="_blank" rel="noopener" class="card">
-        <div class="card-titlebar">
-          <div class="card-dot"></div><div class="card-dot"></div><div class="card-dot"></div>
+      <section id="title-screen" class="title-screen" aria-labelledby="title-logo">
+        <div class="title-inner">
+          <p class="title-kicker">▲ A PLAYABLE PORTFOLIO ▲</p>
+          <h1 id="title-logo" class="title-logo">
+            <span>ROSHAN</span><span>PREMIL</span>
+          </h1>
+          <p class="title-sub">ENGINEER · EXPLORER · BUILDER</p>
+          <nav class="title-menu" aria-label="Game menu">
+            <button id="start-btn" class="menu-item">
+              <span id="start-label">NEW GAME</span>
+            </button>
+            <button id="log-btn" class="menu-item">QUEST LOG</button>
+            <a href="resume.html" class="menu-item">RÉSUMÉ</a>
+          </nav>
+          <p class="title-blink">PRESS ENTER</p>
         </div>
-        <div class="card-thumb has-img">
-          <img src="screenshots/counsel.png" alt="Counsel AI legal research copilot" loading="lazy">
-        </div>
-        <div class="card-body">
-          <div class="card-title">Counsel</div>
-          <div class="card-desc">AI legal research copilot for Singapore law — searches statutes, MAS guidance, and case law in parallel, then produces citation-backed briefs with live source traces and confidence scoring. Built for the TinyFish Hackathon.</div>
-          <div class="card-tags">
-            <span class="tag cyan">TypeScript</span>
-            <span class="tag pink">AI Agent</span>
-            <span class="tag">RAG</span>
-            <span class="tag">Singapore Law</span>
-          </div>
-        </div>
-      </a>
-
-      <!-- LP Radar -->
-      <a href="https://github.com/Rosh2403/LDRadar" target="_blank" rel="noopener" class="card">
-        <div class="card-titlebar">
-          <div class="card-dot"></div><div class="card-dot"></div><div class="card-dot"></div>
-        </div>
-        <div class="card-thumb has-img">
-          <img src="screenshots/lpradar.png" alt="LP Radar dashboard" loading="lazy">
-        </div>
-        <div class="card-body">
-          <div class="card-title">LP Radar</div>
-          <div class="card-desc">AI agent that monitors institutional investors — endowments, SWFs, pension funds — and surfaces intelligence the moment it happens. Built for the TinyFish Accelerator.</div>
-          <div class="card-tags">
-            <span class="tag cyan">TypeScript</span>
-            <span class="tag">Next.js 14</span>
-            <span class="tag pink">AI Agent</span>
-            <span class="tag">Prisma</span>
-            <span class="tag">SSE</span>
-          </div>
-        </div>
-      </a>
-
-      <!-- GravityGuard -->
-      <a href="https://github.com/Rosh2403/Fall-detector" target="_blank" rel="noopener" class="card">
-        <div class="card-titlebar">
-          <div class="card-dot"></div><div class="card-dot"></div><div class="card-dot"></div>
-        </div>
-        <div class="card-thumb has-img">
-          <img src="screenshots/gravityguard.png" alt="GravityGuard fall detection dashboard" loading="lazy">
-        </div>
-        <div class="card-body">
-          <div class="card-title">GravityGuard</div>
-          <div class="card-desc">Real-time embedded fall detection system on STM32L4S5. Combines accelerometer + gyroscope sensing, ARM assembly filtering, and Wi-Fi telemetry to a live dashboard.</div>
-          <div class="card-tags">
-            <span class="tag cyan">C</span>
-            <span class="tag pink">ARM Assembly</span>
-            <span class="tag">STM32</span>
-            <span class="tag">Embedded</span>
-          </div>
-        </div>
-      </a>
-
-      <!-- ParkSmart -->
-      <a href="https://github.com/Rosh2403/ParkSmart" target="_blank" rel="noopener" class="card">
-        <div class="card-titlebar">
-          <div class="card-dot"></div><div class="card-dot"></div><div class="card-dot"></div>
-        </div>
-        <div class="card-thumb has-img">
-          <img src="https://github.com/user-attachments/assets/b4dbb531-3345-4b9a-aef7-6df364895c46" alt="ParkSmart app screenshot" loading="lazy">
-        </div>
-        <div class="card-body">
-          <div class="card-title">ParkSmart</div>
-          <div class="card-desc">Singapore parking optimizer with real-time availability from LTA DataMall. Smart scoring ranks carparks by cost, distance & availability with one-tap Google Maps navigation.</div>
-          <div class="card-tags">
-            <span class="tag cyan">JavaScript</span>
-            <span class="tag">Next.js 14</span>
-            <span class="tag pink">LTA API</span>
-            <span class="tag">Leaflet</span>
-            <span class="tag">Gemini</span>
-          </div>
-        </div>
-      </a>
-
-      <!-- ProjectX -->
-      <a href="https://github.com/Rosh2403/ProjectX" target="_blank" rel="noopener" class="card">
-        <div class="card-titlebar">
-          <div class="card-dot"></div><div class="card-dot"></div><div class="card-dot"></div>
-        </div>
-        <div class="card-thumb has-img">
-          <img src="screenshots/projectx.png" alt="ProjectX invoice reconciliation app" loading="lazy">
-        </div>
-        <div class="card-body">
-          <div class="card-title">ProjectX — Invoice Reconciliation</div>
-          <div class="card-desc">Frontend app for purchase orders, invoicing, and dashboard analytics. Row-level security via Supabase with CSV reporting and real-time data sync.</div>
-          <div class="card-tags">
-            <span class="tag cyan">TypeScript</span>
-            <span class="tag">Vite</span>
-            <span class="tag pink">Supabase</span>
-          </div>
-        </div>
-      </a>
-
-
-      <!-- Cactus x DeepMind Hackathon -->
-      <a href="https://github.com/Rosh2403/functiongemma-hackathon" target="_blank" rel="noopener" class="card">
-        <div class="card-titlebar">
-          <div class="card-dot"></div><div class="card-dot"></div><div class="card-dot"></div>
-        </div>
-        <div class="card-thumb has-img">
-          <img src="screenshots/cactus.png" alt="Cactus app screenshot" loading="lazy">
-        </div>
-        <div class="card-body">
-          <div class="card-title">Cactus × DeepMind Hackathon</div>
-          <div class="card-desc">Hackathon project built on the FunctionGemma framework — a Cactus Compute × DeepMind collaboration exploring agentic function-calling with Gemma models.</div>
-          <div class="card-tags">
-            <span class="tag cyan">Python</span>
-            <span class="tag pink">Gemma</span>
-            <span class="tag">DeepMind</span>
-            <span class="tag">Hackathon</span>
-          </div>
-        </div>
-      </a>
-
-    </div>
-  </section>
-</div>
-
-<!-- ─── WAVE DIVIDER 2 ─── -->
-<div style="height:70px;overflow:hidden;background:var(--bg2);position:relative;">
-  <svg viewBox="0 0 1440 70" preserveAspectRatio="none" style="position:absolute;bottom:0;width:100%;height:100%;">
-    <path d="M0,20 C360,60 720,0 1080,40 C1260,60 1380,20 1440,30 L1440,70 L0,70 Z" fill="var(--bg)"/>
-    <path d="M0,20 C360,60 720,0 1080,40 C1260,60 1380,20 1440,30" fill="none" stroke="url(#waveGrad2)" stroke-width="2"/>
-    <defs>
-      <linearGradient id="waveGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stop-color="#00d4ff"/>
-        <stop offset="50%" stop-color="#9d4edd"/>
-        <stop offset="100%" stop-color="#ff6ec7"/>
-      </linearGradient>
-    </defs>
-  </svg>
-</div>
-
-<!-- ─── ABOUT ─── -->
-<div id="about" style="background:var(--bg);">
-  <div id="about-section" style="background:transparent;border:none;">
-    <div class="about-inner">
-      <div>
-        <h2 class="about-heading">About Me</h2>
-        <p class="about-text">
-          Hey, I'm <strong>Roshan</strong>, a Year 2 <strong>Computer Engineering student at NUS</strong>, Singapore.
-          I build things that sit at the intersection of hardware, software, and real-world problems.
+        <p class="title-foot">
+          © <span id="year">2026</span> ROSHAN PREMIL · SINGAPORE
         </p>
-        <p class="about-text">
-          From embedded systems on STM32 microcontrollers to AI-powered web apps and fintech dashboards,
-          I love the full stack and the challenge of shipping something that actually works.
-        </p>
-        <p class="about-text">
-          Currently exploring <strong>AI agents</strong>, <strong>full-stack development</strong>, and anything that
-          makes everyday life a bit smarter.
+      </section>
+    </main>
+
+    <dialog id="panel" aria-labelledby="panel-title">
+      <div class="panel-head">
+        <span id="panel-kicker"></span>
+        <button class="panel-close" data-close aria-label="Close">ESC ✕</button>
+      </div>
+      <div id="panel-body" class="panel-body"></div>
+    </dialog>
+
+    <noscript>
+      <div class="noscript">
+        <h1>Roshan Premil</h1>
+        <p>
+          This portfolio is a small game and needs JavaScript. You can still
+          see the projects on <a href="https://github.com/Rosh2403">GitHub</a>
+          or read the <a href="resume.html">résumé</a>.
         </p>
       </div>
-      <div>
-        <div class="skills-grid">
-          <div class="skill-pill"><span class="dot-skill"></span>TypeScript / JavaScript</div>
-          <div class="skill-pill"><span class="dot-skill"></span>Next.js / React</div>
-          <div class="skill-pill"><span class="dot-skill"></span>C / C# / Java</div>
-          <div class="skill-pill"><span class="dot-skill"></span>ARM Assembly</div>
-          <div class="skill-pill"><span class="dot-skill"></span>Python</div>
-          <div class="skill-pill"><span class="dot-skill"></span>Embedded Systems</div>
-          <div class="skill-pill"><span class="dot-skill"></span>Supabase / Prisma</div>
-          <div class="skill-pill"><span class="dot-skill"></span>AI Agents / LLMs</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ─── CONTACT ─── -->
-<div style="background:var(--bg2); border-top: 1px solid rgba(157,78,221,0.15);">
-  <section id="contact-section" style="max-width:700px;">
-    <h2 class="contact-title">Let's Connect</h2>
-    <p class="contact-sub">
-      Open to internships, collaborations, and interesting projects.<br/>
-      Drop me a message anytime.
-    </p>
-    <div class="contact-links">
-      <a href="mailto:rohanroshan2403@gmail.com" class="contact-btn primary">
-        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-        Email Me
-      </a>
-      <a href="https://github.com/Rosh2403" target="_blank" rel="noopener" class="contact-btn">
-        <svg viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
-        GitHub
-      </a>
-      <a href="https://linkedin.com/in/roshanpremil" target="_blank" rel="noopener" class="contact-btn">
-        <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-        LinkedIn
-      </a>
-    </div>
-  </section>
-</div>
-
-<!-- ─── FOOTER ─── -->
-<footer>
-  <p>© 2026 Roshan Premil · Built with ♥ in Singapore</p>
-</footer>
-
-<script>
-  // Generate stars
-  const starsEl = document.getElementById('stars');
-  for (let i = 0; i < 120; i++) {
-    const s = document.createElement('div');
-    s.className = 'star';
-    const size = Math.random() * 2.5 + 0.5;
-    s.style.cssText = `
-      width:${size}px; height:${size}px;
-      left:${Math.random()*100}%;
-      top:${Math.random()*100}%;
-      --d:${(Math.random()*4+2).toFixed(1)}s;
-      --delay:${(Math.random()*5).toFixed(1)}s;
-      --op:${(Math.random()*0.5+0.2).toFixed(2)};
-    `;
-    starsEl.appendChild(s);
-  }
-</script>
-
-</body>
+    </noscript>
+  </body>
 </html>
